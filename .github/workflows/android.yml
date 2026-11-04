@@ -1,3 +1,5 @@
+
+
 name: Build Android APK
 
 on:
@@ -25,6 +27,12 @@ jobs:
           cd app
           flutter create --platforms=android .
           flutter pub get
+
+      - name: Install Android NDK
+        run: |
+          rm -rf "$ANDROID_HOME/ndk/28.2.13676358"
+rm -rf "$HOME/.android/cache"
+yes | sdkmanager --install "ndk;28.2.13676358"
 
       - name: Build APK
         run: |
