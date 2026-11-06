@@ -6,7 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,8 +29,8 @@ jobs:
           flutter create --platforms=android .
           flutter pub get
 
-          - name: Install Android NDK
-         run: |
+      - name: Install Android NDK
+        run: |
           rm -rf "$ANDROID_HOME/ndk/28.2.13676358"
           rm -rf "$HOME/.android/cache"
           yes | sdkmanager --install "ndk;28.2.13676358"
