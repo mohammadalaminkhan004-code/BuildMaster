@@ -1,4 +1,5 @@
-name: Build Android APK
+
+name: BuildMaster AI Android APK
 
 on:
   workflow_dispatch:
@@ -6,8 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -21,27 +23,43 @@ jobs:
         with:
           channel: stable
 
-      - name: Prepare Flutter Project
+      - name: Prepare Project
+        id: prepare
+        shell: bash
         run: |
-          mkdir app
-          unzip -q BuildMaster_AI_Source_Package.zip -d app
-          cd app
-          flutter create --platforms=android .
+          set -e
+          if [ ! -f "BuildMaster_AI_Source_Package.zip" ]; then
+            echo "Source ZIP file not found!"
+            exit 1
+          fi
+
+          mkdir -p source
+          unzip -q BuildMaster_AI_Source_Package.zip -d source
+
+          PUBSPEC=$(find source -name pubspec.yaml -print -quit)
+
+          if [ -z "$PUBSPEC" ]; then
+            echo "Flutter project not found!"
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$PUBSPEC")
+          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+          cd "$PROJECT_DIR"
+
+          if [ ! -d android ]; then
+            flutter create --platforms=android .
+          fi
+
           flutter pub get
 
-      - name: Install Android NDK
-        run: |
-          rm -rf "$ANDROID_HOME/ndk/28.2.13676358"
-          rm -rf "$HOME/.android/cache"
-          yes | sdkmanager --install "ndk;28.2.13676358"
-
       - name: Build APK
-        run: |
-          cd app
-          flutter build apk --release
+        run: flutter build apk --release
+        working-directory: ${{ steps.prepare.outputs.project_dir }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: BuildMaster-AI-APK
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ steps.prepare.outputs.project_dir }}/build/app/outputs/flutter-apk/app-release.apk
